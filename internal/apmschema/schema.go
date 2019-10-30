@@ -18,11 +18,11 @@
 package apmschema
 
 import (
-	"go/build"
 	"log"
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/santhosh-tekuri/jsonschema"
 )
@@ -45,13 +45,11 @@ var (
 )
 
 func init() {
-	pkg, err := build.Default.Import("go.elastic.co/apm/internal/apmschema", "", build.FindOnly)
-	if err != nil {
-		log.Fatal(err)
-	}
+	_, filename, _, _ := runtime.Caller(0)
+	dir := strings.TrimRight(filename,"schema.go")
 	compiler := jsonschema.NewCompiler()
 	compiler.Draft = jsonschema.Draft4
-	schemaDir := path.Join(filepath.ToSlash(pkg.Dir), "jsonschema")
+	schemaDir := path.Join(filepath.ToSlash(dir), "jsonschema")
 	if runtime.GOOS == "windows" {
 		schemaDir = "/" + schemaDir
 	}
