@@ -35,9 +35,9 @@ import (
 	"github.com/santhosh-tekuri/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.elastic.co/apm/internal/apmschema"
 
 	"go.elastic.co/apm"
+	"go.elastic.co/apm/internal/apmschema"
 )
 
 func TestValidateServiceName(t *testing.T) {
