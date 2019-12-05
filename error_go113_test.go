@@ -21,9 +21,7 @@ package apm_test
 
 import (
 	"fmt"
-	"io"
 	"runtime"
-	"strings"
 	"testing"
 
 	realErr "errors"
@@ -32,7 +30,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.elastic.co/apm/apmtest"
-
 	"go.elastic.co/apm/transport/transporttest"
 )
 
@@ -96,44 +93,8 @@ func (se StackErr) Error() string {
 	return se.Err.Error()
 }
 
-// Format controls the optional display of the stack trace. Use %+v to output the stack trace, use %v or %s to output
-// the wrapped error only, use %q to get a single-quoted character literal safely escaped with Go syntax for the wrapped
-// error.
-func (se StackErr) Format(s fmt.State, verb rune) {
-	switch verb {
-	case 'v':
-		if s.Flag('+') {
-			fmt.Fprintf(s, "%+v\n", se.Unwrap())
-			fmt.Fprintf(s, "%s", strings.Join(se.Trace(), "\n"))
-			return
-		}
-		io.WriteString(s, se.Error())
-	case 's':
-		io.WriteString(s, se.Error())
-	case 'q':
-		fmt.Fprintf(s, "%q", se.Error())
-	}
-}
-
-// Trace returns the stack trace information as a slice of strings. Each entry is formatted as
-// "FUNCTION_NAME (FILE_NAME:LINE_NUMBER)"
-func (se StackErr) Trace() []string {
-	s := make([]string, 0, len(se.trace))
-	frames := se.StackTrace()
-	for {
-		frame, more := frames.Next()
-		s = append(s, fmt.Sprintf("%s (%s:%d)", frame.Function, frame.File, frame.Line))
-		if !more {
-			break
-		}
-	}
-	return s
-}
-
 func TestMyStackErr(t *testing.T) {
 	e := realErr.New("This is a test")
-	e = WithStack(e)
-	e = fmt.Errorf("so sad: %w", e)
 	e = WithStack(e)
 	tracer := apmtest.NewRecordingTracer()
 	defer tracer.Close()
@@ -141,5 +102,36 @@ func TestMyStackErr(t *testing.T) {
 	e2 := tracer.NewError(e)
 	e2.Send()
 	tracer.Flush(nil)
-	fmt.Println(tracer.RecorderTransport.Payloads().Errors[0].Exception.Stacktrace)
+	stacktrace := tracer.RecorderTransport.Payloads().Errors[0].Exception.Stacktrace
+	if len(stacktrace) != 3 {
+		t.Fatal("Expected 3 elements in stack")
+	}
+	data := []struct {
+		file     string
+		module   string
+		function string
+	}{
+		{
+			file:     "error_go113_test.go",
+			module:   "go.elastic.co/apm_test",
+			function: "TestMyStackErr",
+		},
+		{
+			file:     "testing.go",
+			module:   "testing",
+			function: "tRunner",
+		},
+	}
+	// we're checking the first two only, because the third is a platform-specific assembly file
+	for k, v := range data {
+		if stacktrace[k].File != v.file {
+			t.Errorf("unexpected file for %d: %s", k, stacktrace[k].File)
+		}
+		if stacktrace[k].Module != v.module {
+			t.Errorf("unexpected module for %d: %s", k, stacktrace[k].Module)
+		}
+		if stacktrace[k].Function != v.function {
+			t.Errorf("unexpected function for %d: %s", k, stacktrace[k].Function)
+		}
+	}
 }
