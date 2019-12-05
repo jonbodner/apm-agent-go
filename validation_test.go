@@ -35,9 +35,9 @@ import (
 	"github.com/santhosh-tekuri/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.elastic.co/apm/internal/apmschema"
 
 	"go.elastic.co/apm"
-	"go.elastic.co/apm/internal/apmschema"
 )
 
 func TestValidateServiceName(t *testing.T) {
@@ -356,6 +356,10 @@ func validatePayloads(t *testing.T, f func(tracer *apm.Tracer)) {
 type validatingTransport struct {
 	t *testing.T
 }
+
+//func (t *validatingTransport) SendStream(ctx context.Context, r io.Reader) error {
+//	return nil
+//}
 
 func (t *validatingTransport) SendStream(ctx context.Context, r io.Reader) error {
 	zr, err := zlib.NewReader(r)

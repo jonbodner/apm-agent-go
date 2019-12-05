@@ -18,6 +18,7 @@
 package apmschema
 
 import (
+	"fmt"
 	"go/build"
 	"log"
 	"path"
@@ -47,6 +48,7 @@ var (
 func init() {
 	pkg, err := build.Default.Import("go.elastic.co/apm/internal/apmschema", "", build.FindOnly)
 	if err != nil {
+		fmt.Println("HELLO!!!!")
 		log.Fatal(err)
 	}
 	compiler := jsonschema.NewCompiler()
