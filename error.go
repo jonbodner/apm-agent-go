@@ -23,8 +23,11 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"runtime"
 	"syscall"
 	"time"
+
+	realErr "errors"
 
 	"github.com/pkg/errors"
 
@@ -462,22 +465,44 @@ func (b *exceptionDataBuilder) init(e *exceptionData, err error) bool {
 }
 
 func (b *exceptionDataBuilder) initErrorStacktrace(out *[]stacktrace.Frame, err error) {
-	type internalStackTracer interface {
+	var ist interface {
 		StackTrace() []stacktrace.Frame
 	}
-	type errorsStackTracer interface {
-		StackTrace() errors.StackTrace
-	}
-	switch stackTracer := err.(type) {
-	case internalStackTracer:
-		stackTrace := stackTracer.StackTrace()
+	if realErr.As(err, &ist) {
+		stackTrace := ist.StackTrace()
 		if b.stackTraceLimit >= 0 && len(stackTrace) > b.stackTraceLimit {
 			stackTrace = stackTrace[:b.stackTraceLimit]
 		}
 		*out = append(*out, stackTrace...)
-	case errorsStackTracer:
-		stackTrace := stackTracer.StackTrace()
+		return
+	}
+
+	var est interface {
+		StackTrace() errors.StackTrace
+	}
+	if realErr.As(err, &est) {
+		stackTrace := est.StackTrace()
 		pkgerrorsutil.AppendStacktrace(stackTrace, out, b.stackTraceLimit)
+		return
+	}
+
+	var sst interface {
+		StackTrace() *runtime.Frames
+	}
+	if realErr.As(err, &sst) {
+		frames := sst.StackTrace()
+		count := 0
+		for {
+			if b.stackTraceLimit >= 0 && count == b.stackTraceLimit {
+				break
+			}
+			frame, more := frames.Next()
+			*out = append(*out, stacktrace.RuntimeFrame(frame))
+			if !more {
+				break
+			}
+			count++
+		}
 	}
 }
 
