@@ -118,7 +118,7 @@ func (se StackErr) Format(s fmt.State, verb rune) {
 // Trace returns the stack trace information as a slice of strings. Each entry is formatted as
 // "FUNCTION_NAME (FILE_NAME:LINE_NUMBER)"
 func (se StackErr) Trace() []string {
-	s := make([]string,0,len(se.trace))
+	s := make([]string, 0, len(se.trace))
 	frames := se.StackTrace()
 	for {
 		frame, more := frames.Next()

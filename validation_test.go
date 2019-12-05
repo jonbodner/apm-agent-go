@@ -357,10 +357,6 @@ type validatingTransport struct {
 	t *testing.T
 }
 
-//func (t *validatingTransport) SendStream(ctx context.Context, r io.Reader) error {
-//	return nil
-//}
-
 func (t *validatingTransport) SendStream(ctx context.Context, r io.Reader) error {
 	zr, err := zlib.NewReader(r)
 	require.NoError(t.t, err)
