@@ -8,9 +8,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	go.elastic.co/apm v1.6.0
 	go.elastic.co/apm/module/apmsql v1.6.0
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	mellium.im/sasl v0.2.1 // indirect
 )
 
